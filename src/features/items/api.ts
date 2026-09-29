@@ -97,13 +97,14 @@ export async function setItemTags(itemId: UUID, tagIds: UUID[]) {
 }
 
 export async function itemUsage(id: UUID) {
-  const [links, spots] = await Promise.all([
+  const [links, spots, vspots] = await Promise.all([
     supabase.from('fa_content_items').select('*', { count: 'exact', head: true }).eq('item_id', id),
     supabase.from('fa_item_hotspots').select('*', { count: 'exact', head: true }).eq('item_id', id),
+    supabase.from('fa_video_hotspots').select('*', { count: 'exact', head: true }).eq('item_id', id),
   ])
   if (links.error) throw links.error
   if (spots.error) throw spots.error
-  return { contents: links.count ?? 0, hotspots: spots.count ?? 0 }
+  return { contents: links.count ?? 0, hotspots: (spots.count ?? 0) + (vspots.count ?? 0) }
 }
 
 /** 제품 삭제: 콘텐츠 연결·사진 영역은 연결 정보라서 같이 지워진다. 콘텐츠 자체는 남는다 */

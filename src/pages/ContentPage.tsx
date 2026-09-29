@@ -6,6 +6,7 @@ import { ErrorBox, Spinner } from '../components/ui/States'
 import { useAuth } from '../features/auth/AuthProvider'
 import { getContent, type ContentDetail } from '../features/contents/api'
 import { HotspotImage } from '../features/hotspots/HotspotImage'
+import { HotspotVideo } from '../features/hotspots/HotspotVideo'
 import { formatDate, formatPrice, nameOrPlaceholder } from '../lib/format'
 import { thumbOf } from '../lib/storage'
 import { youTubeEmbedUrl } from '../lib/youtube'
@@ -19,23 +20,14 @@ export function ContentPage() {
   if (q.error || !q.data) return <ErrorBox error={q.error ?? '콘텐츠를 찾을 수 없어요.'} onRetry={() => q.refetch()} />
   const c = q.data
   const embed = youTubeEmbedUrl(c.youtube_url)
+  const itemMap = new Map(c.items.map((i) => [i.id, i]))
   const personName = nameOrPlaceholder(c.person?.display_name)
 
   return (
     <article className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-6">
-        {embed && (
-          <div className="aspect-video overflow-hidden rounded-xl bg-black">
-            <iframe
-              src={embed}
-              title={c.title || `${personName} 영상`}
-              className="h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-              loading="lazy"
-            />
-          </div>
+        {c.youtube_url && embed && (
+          <HotspotVideo youtubeUrl={c.youtube_url} spots={c.video_hotspots} items={itemMap} title={c.title || `${personName} 영상`} />
         )}
         {c.images.length > 0 && <Gallery content={c} />}
         {!embed && c.images.length === 0 && (

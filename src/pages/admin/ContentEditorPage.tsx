@@ -25,6 +25,7 @@ import {
   type LinkedItem,
 } from '../../features/contents/api'
 import { HotspotEditor } from '../../features/hotspots/HotspotEditor'
+import { VideoHotspotEditor } from '../../features/hotspots/VideoHotspotEditor'
 import { ItemFormModal } from '../../features/items/ItemFormModal'
 import { PersonFormModal } from '../../features/people/PersonFormModal'
 import { useContentTypes } from '../../hooks/useLookups'
@@ -50,6 +51,7 @@ export function ContentEditorPage() {
         <>
           <PhotosSection content={content.data} />
           <ItemsSection content={content.data} />
+          {content.data.youtube_url && <VideoSpotSection content={content.data} />}
           <HotspotSection content={content.data} />
         </>
       ) : (
@@ -538,7 +540,8 @@ function ItemsSection({ content }: { content: ContentDetail }) {
   }
 
   const spotCount = (itemId: string) =>
-    content.images.reduce((n, im) => n + im.hotspots.filter((h) => h.item_id === itemId).length, 0)
+    content.images.reduce((n, im) => n + im.hotspots.filter((h) => h.item_id === itemId).length, 0) +
+    content.video_hotspots.filter((h) => h.item_id === itemId).length
 
   return (
     <section aria-labelledby="sec-items" className="card p-5 sm:p-6">
@@ -655,6 +658,27 @@ function HotspotSection({ content }: { content: ContentDetail }) {
           <HotspotEditor key={image.id} contentId={content.id} image={image} items={content.items} />
         </>
       )}
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------- 영상 Hotspot
+
+function VideoSpotSection({ content }: { content: ContentDetail }) {
+  return (
+    <section aria-labelledby="sec-video-spots" className="card p-5 sm:p-6">
+      <h2 id="sec-video-spots" className="mb-1 text-base font-semibold">
+        영상 제품 영역 <span className="font-normal text-muted">{content.video_hotspots.length}</span>
+      </h2>
+      <p className="mb-5 text-xs text-muted">
+        영상을 원하는 장면에서 멈추고 “+ 제품 영역 추가” → 드래그 → 보일 시간과 제품을 정해요. 재생 중 그 구간에만 영역이 살아 있어요.
+      </p>
+      <VideoHotspotEditor
+        contentId={content.id}
+        youtubeUrl={content.youtube_url!}
+        spots={content.video_hotspots}
+        items={content.items}
+      />
     </section>
   )
 }

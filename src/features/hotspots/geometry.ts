@@ -1,4 +1,4 @@
-import type { Hotspot, Rect } from '../../types/db'
+import type { Hotspot, Rect, VideoHotspot } from '../../types/db'
 
 export const MIN_SIZE = 1.5 // % — 이보다 작게 그리면 실수로 본다
 
@@ -62,3 +62,7 @@ export function resizeRect(r: Rect, handle: Handle, dx: number, dy: number): Rec
   }
   return { x, y, width, height }
 }
+
+/** 영상 영역이 t 초에 보이는지 (end_sec 가 없으면 끝까지) */
+export const isActiveAt = (s: Pick<VideoHotspot, 'start_sec' | 'end_sec'>, t: number) =>
+  t >= s.start_sec && (s.end_sec == null || t < s.end_sec)

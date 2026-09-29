@@ -11,6 +11,7 @@ import type {
   Rect,
   Tag,
   UUID,
+  VideoHotspot,
 } from '../../types/db'
 
 export async function searchContents(f: ContentFilters, limit = 24, offset = 0): Promise<Page<ContentRow>> {
@@ -49,6 +50,7 @@ export interface ContentDetail extends Content {
   person: { id: UUID; display_name: string; image_path: string | null } | null
   content_type: { id: UUID; name: string } | null
   images: (ContentImage & { hotspots: Hotspot[] })[]
+  video_hotspots: VideoHotspot[]
   items: LinkedItem[]
   tags: Tag[]
 }
@@ -65,6 +67,7 @@ export async function getContent(id: UUID): Promise<ContentDetail> {
         `*, person:fa_people(id, display_name, image_path),
          content_type:fa_content_types(id, name),
          images:fa_content_images(*, hotspots:fa_item_hotspots(*)),
+         video_hotspots:fa_video_hotspots(*),
          content_items:fa_content_items(sort_order, created_at, item:fa_items(${LINKED_ITEM_COLS})),
          content_tags:fa_content_tags(tag:fa_tags(id, name, sort_order))`,
       )
@@ -74,6 +77,7 @@ export async function getContent(id: UUID): Promise<ContentDetail> {
     person: ContentDetail['person']
     content_type: ContentDetail['content_type']
     images: (ContentImage & { hotspots: Hotspot[] })[]
+    video_hotspots: VideoHotspot[] | null
     content_items: { sort_order: number; created_at: string; item: LinkedItem }[]
     content_tags: { tag: Tag }[]
   }
@@ -84,6 +88,8 @@ export async function getContent(id: UUID): Promise<ContentDetail> {
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
       .map((im) => ({ ...im, hotspots: im.hotspots.map(normalizeHotspot) })),
+    // 0003 마이그레이션 전이면 null 로 온다
+    video_hotspots: (rest.video_hotspots ?? []).map(normalizeVideoHotspot),
     items: content_items
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
@@ -258,6 +264,72 @@ export async function updateHotspot(id: UUID, patch: Partial<Rect> & { item_id?:
 
 export async function deleteHotspot(id: UUID) {
   must(await supabase.from('fa_item_hotspots').delete().eq('id', id))
+}
+
+// ---- 영상 Hotspot ----
+
+function normalizeVideoHotspot(h: VideoHotspot): VideoHotspot {
+  return {
+    ...normalizeHotspot(h as unknown as Hotspot),
+    content_id: h.content_id,
+    start_sec: Number(h.start_sec),
+    end_sec: h.end_sec == null ? null : Number(h.end_sec),
+  } as unknown as VideoHotspot
+}
+
+export interface VideoTiming {
+  start_sec: number
+  end_sec: number | null
+}
+
+export async function createVideoHotspot(
+  contentId: UUID,
+  itemId: UUID,
+  rect: Rect,
+  timing: VideoTiming,
+  zIndex: number,
+): Promise<VideoHotspot> {
+  return normalizeVideoHotspot(
+    must(
+      await supabase
+        .from('fa_video_hotspots')
+        .insert({ content_id: contentId, item_id: itemId, ...roundRect(rect), ...roundTiming(timing), z_index: zIndex })
+        .select('*')
+        .single(),
+    ) as VideoHotspot,
+  )
+}
+
+export async function updateVideoHotspot(
+  id: UUID,
+  patch: Partial<Rect> & Partial<VideoTiming> & { item_id?: UUID; z_index?: number },
+) {
+  const { item_id, z_index, start_sec, end_sec, ...rect } = patch
+  const timing: Partial<VideoTiming> = {}
+  if (start_sec !== undefined) timing.start_sec = Math.round(start_sec * 100) / 100
+  if (end_sec !== undefined) timing.end_sec = end_sec == null ? null : Math.round(end_sec * 100) / 100
+  must(
+    await supabase
+      .from('fa_video_hotspots')
+      .update({
+        ...(Object.keys(rect).length ? roundRect(rect as Rect) : {}),
+        ...timing,
+        ...(item_id ? { item_id } : {}),
+        ...(z_index !== undefined ? { z_index } : {}),
+      })
+      .eq('id', id),
+  )
+}
+
+export async function deleteVideoHotspot(id: UUID) {
+  must(await supabase.from('fa_video_hotspots').delete().eq('id', id))
+}
+
+function roundTiming(t: VideoTiming): VideoTiming {
+  return {
+    start_sec: Math.max(0, Math.round(t.start_sec * 100) / 100),
+    end_sec: t.end_sec == null ? null : Math.round(t.end_sec * 100) / 100,
+  }
 }
 
 function roundRect(r: Partial<Rect>) {

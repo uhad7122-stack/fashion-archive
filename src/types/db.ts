@@ -116,6 +116,21 @@ export interface Hotspot {
   created_at: string
 }
 
+/** 영상 영역: 사진 영역 좌표 + 보이는 시간(초). end_sec 가 null 이면 영상 끝까지 */
+export interface VideoHotspot {
+  id: UUID
+  content_id: UUID
+  item_id: UUID
+  x: number
+  y: number
+  width: number
+  height: number
+  start_sec: number
+  end_sec: number | null
+  z_index: number
+  created_at: string
+}
+
 export interface Rect {
   x: number
   y: number

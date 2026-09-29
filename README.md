@@ -12,6 +12,9 @@
 - **사진별 Hotspot**: 콘텐츠의 사진마다 제품 영역을 드래그로 지정한다. 좌표는 % 로 저장해서 이미지 크기가 바뀌어도 유지된다.
   - 공개 화면에서는 영역이 **보이지 않는다**. 데스크톱은 마우스를 올리면, 모바일은 탭하면 제품 정보 카드가 뜬다.
   - 영역이 겹치면 `z_index` → 작은 영역 → 나중에 만든 영역 순으로 위에 온다. 편집 화면에서 “앞으로/뒤로”로 바꿀 수 있다.
+- **영상 Hotspot**: YouTube 영상 위에도 드래그로 영역을 지정하고 “보이는 시간(초)”을 정한다. 재생 중 그 구간에만 영역이 살아 있다.
+- **제품 카드 사진**: 영역 카드에 제품 사진이 뜬다. 제품 사진이 없으면 사진에서 그 영역을 잘라 보여준다.
+- **영상 썸네일**: 사진이 없는 영상 콘텐츠는 YouTube 썸네일을 대표 이미지로 쓴다.
 - **다국어 이름**: 인물·브랜드·제품·카테고리에 언어 제한 없이 이름을 여러 개 붙이고, 어느 언어로 검색해도 찾는다.
 - **검색·필터**: 인물·브랜드·제품·제목·태그·메모를 단어별 AND 로 검색. 인물 / 브랜드 / 카테고리(하위 포함) /
   콘텐츠 종류 / 태그 / 날짜 필터, 최신·오래된·콘텐츠 날짜 정렬. 필터는 URL 에 남는다.
@@ -55,7 +58,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<publishable 또는 anon 키>
 
 이 앱은 다른 앱과 Supabase 프로젝트를 같이 쓸 수 있도록 모든 테이블·함수·버킷에 `fa_` 접두사를 붙인다.
 
-1. **DB 스키마**: 대시보드 → SQL Editor 에 `supabase/migrations/0001_init.sql` 을 붙여넣고 Run.
+1. **DB 스키마**: 대시보드 → SQL Editor 에 `supabase/migrations/` 의 파일을 번호 순서대로(0001 → 0002 → 0003) 붙여넣고 Run.
    테이블, 인덱스, 트리거, 검색 RPC, RLS, Storage 버킷(`fa-archive`)과 초기 데이터(언어·콘텐츠 종류·정보 상태·예시 카테고리)가 만들어진다.
    여러 번 실행해도 안전하다.
 2. **관리자 계정**: `supabase/create_admin.sql` 에서 `v_email`, `v_password` 를 바꿔 SQL Editor 에서 Run.
@@ -90,6 +93,7 @@ fa_contents (person_id, content_type_id)    fa_items (brand_id, category_id, inf
    └──────────── fa_content_items (content_id, item_id) ─────────────────────────┘
 fa_names (person_id | brand_id | category_id | item_id, language_code, value)   ← 다국어 이름
 fa_content_tags · fa_item_tags · fa_tags · fa_content_types · fa_info_statuses · fa_languages
+fa_video_hotspots (content_id, item_id, x, y, width, height %, start_sec, end_sec)   ← 영상 영역
 fa_admins (user_id)   ← 쓰기 권한
 ```
 

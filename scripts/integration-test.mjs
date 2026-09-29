@@ -109,6 +109,8 @@ async function main() {
   created.files.push(path)
   const anonUp = await anon.storage.from(BUCKET).upload(`content/${MARK}-anon.png`, png, { contentType: 'image/png' })
   ok(Boolean(anonUp.error), '익명 업로드는 거부된다')
+  const listed = must(await admin.storage.from(BUCKET).list(`content/${content.id}`))
+  ok(listed.some((f) => path.endsWith(f.name)), '관리자는 업로드한 파일 목록을 볼 수 있음 (삭제에 필요)')
   const pub = await fetch(`${URL}/storage/v1/object/public/${BUCKET}/${path}`)
   ok(pub.status === 200, `공개 URL 로 이미지 읽기 (${pub.status})`)
 
@@ -141,6 +143,29 @@ async function main() {
   const cover2 = await admin.from('fa_content_images').update({ is_cover: true }).eq('id', image2.id)
   ok(Boolean(cover2.error), '대표 사진은 콘텐츠당 하나')
   must(await admin.from('fa_content_tags').insert({ content_id: content.id, tag_id: tag.id }))
+
+  console.log('\n[6-2] 영상 제품 영역')
+  must(await admin.from('fa_contents').update({ youtube_url: 'https://youtu.be/dQw4w9WgXcQ' }).eq('id', content.id))
+  const item2 = must(await admin.from('fa_items').insert({ brand_id: brand.id }).select('id').single())
+  created.items.push(item2.id)
+  must(await admin.from('fa_names').insert({ item_id: item2.id, language_code: 'ko', value: `영상 가방 ${MARK}` }))
+  const vspot = await admin
+    .from('fa_video_hotspots')
+    .insert({ content_id: content.id, item_id: item2.id, x: 40, y: 30, width: 15, height: 20, start_sec: 5, end_sec: 12.5 })
+    .select('id')
+    .single()
+  ok(!vspot.error, '영상 영역 만들기 (5초~12.5초)', vspot.error?.message)
+  const vlinks = must(await admin.from('fa_content_items').select('item_id').eq('content_id', content.id))
+  ok(vlinks.some((l) => l.item_id === item2.id), '영상 영역을 지정하면 제품이 콘텐츠에 자동 연결')
+  const badTime = await admin
+    .from('fa_video_hotspots')
+    .insert({ content_id: content.id, item_id: item2.id, x: 1, y: 1, width: 5, height: 5, start_sec: 10, end_sec: 3 })
+  ok(Boolean(badTime.error), '끝 시간이 시작보다 앞이면 거부')
+  const anonV = must(await anon.from('fa_video_hotspots').select('id, start_sec').eq('content_id', content.id))
+  ok(anonV.length === 1, '익명으로 영상 영역 읽기 (공개 화면용)')
+  must(await admin.from('fa_content_items').delete().eq('content_id', content.id).eq('item_id', item2.id))
+  const vleft = must(await admin.from('fa_video_hotspots').select('id').eq('content_id', content.id))
+  ok(vleft.length === 0, '제품 연결을 끊으면 영상 영역도 삭제')
 
   console.log('\n[7] 검색 RPC · 필터')
   const search = async (args) => must(await anon.rpc('fa_search_contents', args))
@@ -187,14 +212,18 @@ async function main() {
   ok(gone.length === 0, '콘텐츠 삭제')
   const imgs = must(await anon.from('fa_content_images').select('id').eq('content_id', content.id))
   ok(imgs.length === 0, '콘텐츠의 사진 행도 삭제')
-  const after = await fetch(`${URL}/storage/v1/object/public/${BUCKET}/${path}?t=${Date.now()}`)
-  ok(after.status === 400 || after.status === 404, `Storage 파일 삭제 (${after.status})`)
+  // 공개 URL 은 CDN 캐시가 남을 수 있어 Storage API 로 확인한다
+  const after = must(await admin.storage.from(BUCKET).list(`content/${content.id}`))
+  ok(after.length === 0, `Storage 파일 삭제 (남은 파일 ${after.length}개)`)
   const names = must(await anon.from('fa_names').select('id').eq('person_id', person.id))
   ok(names.length === 0, '인물의 이름들도 삭제')
 }
 
 async function cleanup() {
-  if (created.files.length) await admin.storage.from(BUCKET).remove(created.files)
+  if (created.files.length) {
+    const rm = await admin.storage.from(BUCKET).remove(created.files)
+    if (rm.error || (rm.data?.length ?? 0) < created.files.length) console.log('  ! Storage 파일이 지워지지 않음', rm.error?.message ?? '')
+  }
   for (const id of created.contents) await admin.from('fa_contents').delete().eq('id', id)
   for (const id of created.items) await admin.from('fa_items').delete().eq('id', id)
   for (const id of created.brands) await admin.from('fa_brands').delete().eq('id', id)

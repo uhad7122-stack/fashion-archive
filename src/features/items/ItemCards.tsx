@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { Img } from '../../components/ui/Img'
+import { RegionCrop } from '../../components/ui/RegionCrop'
 import { publicUrl, thumbOf } from '../../lib/storage'
 import { formatPrice, nameOrPlaceholder } from '../../lib/format'
 import type { ItemRow } from '../../types/db'
@@ -25,30 +26,10 @@ export function ItemThumb({ row, className = '' }: { row: ItemRow; className?: s
   if (!h) {
     return <Img path={fb.storage_path} thumb={fb.thumb_path} alt={row.display_name} className={`object-cover ${className}`} />
   }
-  const W = fb.width ?? 1000
-  const H = fb.height ?? 1250
-  // 영역을 정사각형 안 가운데에 두고 확대한다 (여유 35%). 단위는 원본 픽셀
-  const side = Math.max((h.width / 100) * W, (h.height / 100) * H) * 1.35
-  const cx = ((h.x + h.width / 2) / 100) * W
-  const cy = ((h.y + h.height / 2) / 100) * H
   // 많이 확대하면 썸네일(640px)이 흐려지므로 원본 크기 사진을 쓴다
-  const src = publicUrl(W / side > 2 || !fb.thumb_path ? fb.storage_path : fb.thumb_path)!
-  return (
-    <div className={`relative overflow-hidden bg-soft ${className}`} role="img" aria-label={row.display_name}>
-      <img
-        src={src}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        className="absolute max-w-none"
-        style={{
-          width: `${(W / side) * 100}%`,
-          left: `${(-(cx - side / 2) / side) * 100}%`,
-          top: `${(-(cy - side / 2) / side) * 100}%`,
-        }}
-      />
-    </div>
-  )
+  const zoom = 100 / (Math.max(h.width, h.height) * 1.35)
+  const src = publicUrl(zoom > 2 || !fb.thumb_path ? fb.storage_path : fb.thumb_path)!
+  return <RegionCrop src={src} width={fb.width} height={fb.height} rect={h} alt={row.display_name} className={className} />
 }
 
 export function ItemGrid({ rows, mode }: { rows: ItemRow[]; mode: ViewMode }) {

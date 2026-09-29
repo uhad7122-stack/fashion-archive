@@ -19,6 +19,7 @@ import { usePaged } from '../hooks/usePaged'
 import { useViewMode } from '../hooks/useViewMode'
 import { formatPrice, nameOrPlaceholder } from '../lib/format'
 import { thumbOf } from '../lib/storage'
+import { youTubeThumbUrl } from '../lib/youtube'
 import type { NameRow } from '../types/db'
 
 function OtherNames({ names }: { names: NameRow[] }) {
@@ -234,14 +235,17 @@ export function ItemPage() {
   return (
     <div className="space-y-14">
       <header className="grid gap-8 sm:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="overflow-hidden rounded-2xl">
         <Img
           // 제품 사진이 없으면 이 제품이 등장한 첫 콘텐츠 사진
           path={it.image_path ?? contents.rows[0]?.cover?.storage_path}
           thumb={it.image_path ? thumbOf(it.image_path) : contents.rows[0]?.cover?.thumb_path}
+          externalSrc={youTubeThumbUrl(contents.rows[0]?.youtube_url)}
           alt={it.display_name}
           fallback={it.brand?.display_name ?? it.display_name}
-          className="aspect-square w-full rounded-2xl object-cover"
+          className="aspect-square w-full object-cover"
         />
+        </div>
         <div>
           {it.brand && <p className="eyebrow">{it.brand.display_name}</p>}
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">{nameOrPlaceholder(it.display_name)}</h1>

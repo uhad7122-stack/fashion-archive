@@ -17,6 +17,7 @@ import { usePaged } from '../../hooks/usePaged'
 import { formatDate, formatPrice, nameOrPlaceholder } from '../../lib/format'
 import { thumbOf } from '../../lib/storage'
 import type { Page } from '../../types/db'
+import { youTubeThumbUrl } from '../../lib/youtube'
 
 interface Row {
   id: string
@@ -24,6 +25,7 @@ interface Row {
   sub?: string
   image?: string | null
   imageThumb?: string | null
+  externalImage?: string | null
   href?: string
 }
 
@@ -69,7 +71,9 @@ function AdminList({ title, kind, placeholder, fetch, addButton, onEdit, onDelet
           <ul className="divide-y divide-line rounded-2xl border border-line bg-white">
             {list.rows.map((r) => (
               <li key={r.id} className="flex items-center gap-3 px-4 py-3">
-                <Img path={r.image} thumb={r.imageThumb} alt="" fallback={r.title} className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                  <Img path={r.image} thumb={r.imageThumb} externalSrc={r.externalImage} alt="" fallback={r.title} className="h-11 w-11 object-cover" />
+                </div>
                 <div className="min-w-0 flex-1">
                   {r.href ? (
                     <Link to={r.href} className="block truncate text-sm font-medium hover:underline">
@@ -151,6 +155,7 @@ export function AdminContentsPage() {
                 .join(' · '),
               image: c.cover?.storage_path,
               imageThumb: c.cover?.thumb_path,
+              externalImage: youTubeThumbUrl(c.youtube_url),
               href: `/c/${c.id}`,
             })),
           }

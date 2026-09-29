@@ -50,3 +50,9 @@ export function youTubeEmbedUrl(input: string | null | undefined): string | null
   const start = parseYouTubeStart(input)
   return `https://www.youtube-nocookie.com/embed/${id}${start ? `?start=${start}` : ''}`
 }
+
+/** YouTube 영상 썸네일 (hqdefault 는 모든 영상에 있다) */
+export function youTubeThumbUrl(input: string | null | undefined): string | null {
+  const id = parseYouTubeId(input)
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null
+}

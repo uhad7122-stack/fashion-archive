@@ -12,7 +12,7 @@ import { useUrlFilters } from '../hooks/useUrlFilters'
 import { useViewMode } from '../hooks/useViewMode'
 import type { ContentFilters } from '../types/db'
 
-const KEYS = ['q', 'person', 'type', 'brand', 'category', 'tag', 'from', 'to', 'sort'] as const
+const KEYS = ['q', 'person', 'group', 'type', 'brand', 'category', 'tag', 'from', 'to', 'sort'] as const
 
 export function ContentsPage() {
   const { values, set, clear, active } = useUrlFilters(KEYS)
@@ -81,6 +81,7 @@ export function ContentsPage() {
         {showFilters && (
           <div className="card grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
             <FilterPicker kind="person" label="인물" value={values.person ?? null} onChange={(v) => set({ person: v })} />
+            <FilterPicker kind="group" label="그룹" value={values.group ?? null} onChange={(v) => set({ group: v })} />
             <div>
               <label className="label" htmlFor="f-type">
                 콘텐츠 종류

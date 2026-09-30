@@ -6,7 +6,7 @@ import { SiteLayout } from './layouts/SiteLayout'
 import { ContentPage } from './pages/ContentPage'
 import { ContentsPage } from './pages/ContentsPage'
 import { BrandsPage, PeoplePage } from './pages/DirectoryPages'
-import { BrandPage, ItemPage, PersonPage } from './pages/EntityPages'
+import { BrandPage, GroupPage, ItemPage, PersonPage } from './pages/EntityPages'
 import { HomePage } from './pages/HomePage'
 import { ItemsPage } from './pages/ItemsPage'
 import { LoginPage } from './pages/LoginPage'
@@ -16,6 +16,7 @@ const admin = () => import('./pages/admin')
 const AdminContentsPage = lazy(() => admin().then((m) => ({ default: m.AdminContentsPage })))
 const AdminItemsPage = lazy(() => admin().then((m) => ({ default: m.AdminItemsPage })))
 const AdminPeoplePage = lazy(() => admin().then((m) => ({ default: m.AdminPeoplePage })))
+const AdminGroupsPage = lazy(() => admin().then((m) => ({ default: m.AdminGroupsPage })))
 const AdminBrandsPage = lazy(() => admin().then((m) => ({ default: m.AdminBrandsPage })))
 const CategoriesAdminPage = lazy(() => admin().then((m) => ({ default: m.CategoriesAdminPage })))
 const ContentEditorPage = lazy(() => admin().then((m) => ({ default: m.ContentEditorPage })))
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="i/:id" element={<ItemPage />} />
         <Route path="p/:id" element={<PersonPage />} />
         <Route path="b/:id" element={<BrandPage />} />
+        <Route path="g/:id" element={<GroupPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route
           path="admin"
@@ -50,6 +52,7 @@ export default function App() {
           <Route path="contents/:id" element={<ContentEditorPage />} />
           <Route path="items" element={<AdminItemsPage />} />
           <Route path="people" element={<AdminPeoplePage />} />
+          <Route path="groups" element={<AdminGroupsPage />} />
           <Route path="brands" element={<AdminBrandsPage />} />
           <Route path="categories" element={<CategoriesAdminPage />} />
           <Route path="content-types" element={<LookupAdminPage key="ct" kind="content_types" />} />

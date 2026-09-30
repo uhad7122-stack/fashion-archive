@@ -14,7 +14,7 @@ export interface NameRow {
 }
 
 /** fa_names 를 가진 엔티티 종류 */
-export type NamedKind = 'person' | 'brand' | 'category' | 'item'
+export type NamedKind = 'person' | 'brand' | 'category' | 'item' | 'group'
 
 export interface ContentType {
   id: UUID
@@ -35,8 +35,18 @@ export interface Tag {
   sort_order: number
 }
 
+export interface Group {
+  id: UUID
+  display_name: string
+  image_path: string | null
+  memo: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Person {
   id: UUID
+  group_id: UUID | null
   display_name: string
   image_path: string | null
   memo: string | null
@@ -153,7 +163,7 @@ export interface ContentRow {
   discovered_at: string
   created_at: string
   youtube_url: string | null
-  person: (Ref & { image_path: string | null }) | null
+  person: (Ref & { image_path: string | null; group?: Ref | null }) | null
   content_type: { id: UUID; name: string } | null
   cover: { storage_path: string; thumb_path: string | null; width: number | null; height: number | null } | null
   image_count: number
@@ -190,6 +200,7 @@ export interface Page<T> {
 export interface ContentFilters {
   q?: string
   person?: UUID
+  group?: UUID
   type?: UUID
   brand?: UUID
   category?: UUID

@@ -24,6 +24,7 @@ export async function searchContents(f: ContentFilters, limit = 24, offset = 0):
       p_category: f.category || null,
       p_tag: f.tag || null,
       p_item: f.item || null,
+      p_group: f.group || null,
       p_date_from: f.from || null,
       p_date_to: f.to || null,
       p_sort: f.sort || 'recent',

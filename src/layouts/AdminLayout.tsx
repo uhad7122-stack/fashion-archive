@@ -6,6 +6,7 @@ const TABS = [
   { to: '/admin/contents', label: '콘텐츠' },
   { to: '/admin/items', label: '제품' },
   { to: '/admin/people', label: '인물' },
+  { to: '/admin/groups', label: '그룹' },
   { to: '/admin/brands', label: '브랜드' },
   { to: '/admin/categories', label: '카테고리' },
   { to: '/admin/content-types', label: '콘텐츠 종류' },

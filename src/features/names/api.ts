@@ -7,6 +7,7 @@ const OWNER_COL: Record<NamedKind, string> = {
   brand: 'brand_id',
   category: 'category_id',
   item: 'item_id',
+  group: 'group_id',
 }
 
 export async function fetchNames(kind: NamedKind, ownerId: UUID): Promise<NameRow[]> {

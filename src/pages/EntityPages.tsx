@@ -13,7 +13,9 @@ import { ItemGrid } from '../features/items/ItemCards'
 import { ItemFormModal } from '../features/items/ItemFormModal'
 import { getItem, searchItems } from '../features/items/api'
 import { PersonFormModal } from '../features/people/PersonFormModal'
-import { getPerson } from '../features/people/api'
+import { getPerson, listPeople } from '../features/people/api'
+import { GroupFormModal } from '../features/groups/GroupFormModal'
+import { getGroup } from '../features/groups/api'
 import { useContentTypes } from '../hooks/useLookups'
 import { usePaged } from '../hooks/usePaged'
 import { useViewMode } from '../hooks/useViewMode'
@@ -73,6 +75,11 @@ export function PersonPage() {
           <p className="eyebrow">Person</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">{nameOrPlaceholder(p.display_name)}</h1>
           <OtherNames names={p.names} />
+          {p.group && (
+            <Link to={`/g/${p.group.id}`} className="chip mt-3">
+              {p.group.display_name}
+            </Link>
+          )}
           {p.memo && <p className="mt-3 max-w-xl text-sm whitespace-pre-wrap text-muted">{p.memo}</p>}
           <div className="mt-4 flex gap-2">
             <Link to={`/items?person=${p.id}`} className="btn btn-sm">
@@ -300,6 +307,89 @@ export function ItemPage() {
         )}
       </section>
       <ItemFormModal open={edit} id={it.id} onClose={() => setEdit(false)} />
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------ 그룹
+
+export function GroupPage() {
+  const { id } = useParams()
+  const { isAdmin } = useAuth()
+  const [edit, setEdit] = useState(false)
+  const [mode, setMode] = useViewMode()
+  const group = useQuery({ queryKey: ['group', id], queryFn: () => getGroup(id!) })
+  const members = useQuery({ queryKey: ['people', 'group', id], queryFn: () => listPeople('', 100, 0, id) })
+  const contents = usePaged(['contents', 'group', id], (limit, offset) => searchContents({ group: id, sort: 'date_desc' }, limit, offset))
+
+  if (group.isLoading) return <Spinner />
+  if (group.error || !group.data) return <ErrorBox error={group.error} onRetry={() => group.refetch()} />
+  const g = group.data
+
+  return (
+    <div className="space-y-14">
+      <header className="flex flex-wrap items-center gap-6">
+        <Img path={g.image_path} thumb={thumbOf(g.image_path)} alt="" fallback={g.display_name} className="h-24 w-24 rounded-2xl object-cover" />
+        <div className="min-w-0 flex-1">
+          <p className="eyebrow">Group</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">{nameOrPlaceholder(g.display_name)}</h1>
+          <OtherNames names={g.names} />
+          {g.memo && <p className="mt-3 max-w-xl text-sm whitespace-pre-wrap text-muted">{g.memo}</p>}
+          {isAdmin && (
+            <button className="btn btn-sm mt-4" onClick={() => setEdit(true)}>
+              편집
+            </button>
+          )}
+        </div>
+      </header>
+
+      <section>
+        <h2 className="mb-5 border-b border-line pb-2 text-base font-semibold">
+          멤버 <span className="font-normal text-muted">{members.data?.total ?? ''}</span>
+        </h2>
+        {members.isLoading ? (
+          <Spinner />
+        ) : !members.data?.rows.length ? (
+          <Empty>아직 이 그룹으로 지정된 인물이 없어요. 인물 편집에서 그룹을 고를 수 있어요.</Empty>
+        ) : (
+          <ul className="grid grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-4 lg:grid-cols-6">
+            {members.data.rows.map((p) => (
+              <li key={p.id}>
+                <Link to={`/p/${p.id}`} className="group block text-center">
+                  <Img
+                    path={p.image_path}
+                    thumb={thumbOf(p.image_path)}
+                    alt={p.display_name}
+                    fallback={p.display_name}
+                    className="aspect-square w-full rounded-full object-cover transition-opacity group-hover:opacity-90"
+                  />
+                  <p className="mt-2.5 truncate text-sm font-medium">{nameOrPlaceholder(p.display_name)}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <div className="mb-5 flex items-end justify-between border-b border-line pb-2">
+          <h2 className="text-base font-semibold">
+            멤버들의 아카이브 <span className="font-normal text-muted">{contents.total}</span>
+          </h2>
+          <ViewToggle mode={mode} onChange={setMode} />
+        </div>
+        {contents.isLoading ? (
+          <Spinner />
+        ) : contents.rows.length === 0 ? (
+          <Empty>아직 없어요.</Empty>
+        ) : (
+          <>
+            <ContentGrid rows={contents.rows} mode={mode} />
+            <LoadMore hasMore={Boolean(contents.hasNextPage)} loading={contents.isFetchingNextPage} onMore={() => void contents.fetchNextPage()} shown={contents.rows.length} total={contents.total} />
+          </>
+        )}
+      </section>
+      <GroupFormModal open={edit} id={g.id} onClose={() => setEdit(false)} />
     </div>
   )
 }

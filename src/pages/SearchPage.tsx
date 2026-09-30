@@ -8,6 +8,7 @@ import { searchContents } from '../features/contents/api'
 import { ItemGrid } from '../features/items/ItemCards'
 import { searchItems } from '../features/items/api'
 import { listPeople } from '../features/people/api'
+import { listGroups } from '../features/groups/api'
 import { nameOrPlaceholder } from '../lib/format'
 import { thumbOf } from '../lib/storage'
 
@@ -20,20 +21,21 @@ export function SearchPage() {
     queryKey: ['search', q],
     enabled: q.length > 0,
     queryFn: async () => {
-      const [people, brands, items, contents] = await Promise.all([
+      const [groups, people, brands, items, contents] = await Promise.all([
+        listGroups(q, 12),
         listPeople(q, 12),
         listBrands(q, 12),
         searchItems({ q }, 10),
         searchContents({ q }, 12),
       ])
-      return { people, brands, items, contents }
+      return { groups, people, brands, items, contents }
     },
   })
 
   if (!q) return <Empty>검색어를 입력하세요.</Empty>
 
   const d = res.data
-  const nothing = d && !d.people.total && !d.brands.total && !d.items.total && !d.contents.total
+  const nothing = d && !d.groups.total && !d.people.total && !d.brands.total && !d.items.total && !d.contents.total
 
   return (
     <div className="space-y-12">
@@ -44,6 +46,21 @@ export function SearchPage() {
       {res.isLoading && <Spinner label="검색 중…" />}
       {res.error && <ErrorBox error={res.error} onRetry={() => res.refetch()} />}
       {nothing && <Empty>검색 결과가 없어요. 다른 언어 이름이나 브랜드로도 찾아보세요.</Empty>}
+
+      {d && d.groups.total > 0 && (
+        <Section title="그룹" count={d.groups.total}>
+          <ul className="flex flex-wrap gap-2">
+            {d.groups.rows.map((g) => (
+              <li key={g.id}>
+                <Link to={`/g/${g.id}`} className="chip py-1.5 pr-4 pl-1.5">
+                  <Img path={g.image_path} thumb={thumbOf(g.image_path)} alt="" fallback={g.display_name} className="h-8 w-8 rounded-full object-cover" />
+                  <span className="text-sm">{nameOrPlaceholder(g.display_name)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       {d && d.people.total > 0 && (
         <Section title="인물" count={d.people.total}>

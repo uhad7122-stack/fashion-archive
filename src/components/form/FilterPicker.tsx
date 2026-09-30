@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { EntityPicker } from './EntityPicker'
-import { searchBrandOptions, searchPeopleOptions } from './pickers'
+import { searchBrandOptions, searchGroupOptions, searchPeopleOptions } from './pickers'
 
-type Kind = 'person' | 'brand'
-const TABLE: Record<Kind, string> = { person: 'fa_people', brand: 'fa_brands' }
+type Kind = 'person' | 'brand' | 'group'
+const TABLE: Record<Kind, string> = { person: 'fa_people', brand: 'fa_brands', group: 'fa_groups' }
+const SEARCH = { person: searchPeopleOptions, brand: searchBrandOptions, group: searchGroupOptions }
 
 /** URL 에 id 만 있는 필터(인물·브랜드)를 이름과 함께 보여주는 선택기 */
 export function FilterPicker({
@@ -33,7 +34,7 @@ export function FilterPicker({
       kind={`filter-${kind}`}
       value={value ? { id: value, label: name.data ?? '…' } : null}
       onChange={(o) => onChange(o?.id ?? null)}
-      search={kind === 'person' ? searchPeopleOptions : searchBrandOptions}
+      search={SEARCH[kind]}
       placeholder="전체"
     />
   )

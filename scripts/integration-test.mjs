@@ -18,7 +18,7 @@ const MARK = `itest-${Date.now().toString(36)}`
 const BUCKET = 'fa-archive'
 let passed = 0
 let failed = 0
-const created = { people: [], brands: [], items: [], contents: [], tags: [], files: [] }
+const created = { people: [], brands: [], items: [], contents: [], tags: [], files: [], groups: [] }
 
 function ok(cond, label, extra = '') {
   if (cond) {
@@ -67,6 +67,21 @@ async function main() {
     const r = must(await anon.from('fa_people').select('id').ilike('search_text', `%${q.toLowerCase()}%`))
     ok(r.some((x) => x.id === person.id), `“${q.slice(0, 14)}…” 로 인물 검색`)
   }
+
+  console.log('\n[3-2] 그룹')
+  const group = must(await admin.from('fa_groups').insert({ memo: MARK }).select('id').single())
+  created.groups.push(group.id)
+  must(
+    await admin.from('fa_names').insert([
+      { group_id: group.id, language_code: 'ko', value: `아이브${MARK}`, sort_order: 0 },
+      { group_id: group.id, language_code: 'en', value: `IVE${MARK}`, sort_order: 1 },
+    ]),
+  )
+  must(await admin.from('fa_people').update({ group_id: group.id }).eq('id', person.id))
+  const byGroup = must(await anon.from('fa_people').select('id').ilike('search_text', `%ive${MARK}%`))
+  ok(byGroup.some((x) => x.id === person.id), '그룹 이름(영문)으로 멤버 검색')
+  const delGroup = await admin.from('fa_groups').delete().eq('id', group.id)
+  ok(delGroup.error?.code === '23503', '멤버가 있는 그룹은 바로 삭제되지 않음')
 
   console.log('\n[4] 브랜드 · 카테고리 · 제품 · 태그')
   const brand = must(await admin.from('fa_brands').insert({ official_url: 'https://example.com' }).select('id').single())
@@ -184,6 +199,10 @@ async function main() {
   ok(byCat.total === 1, '상위 카테고리(의류)로 필터하면 하위(티셔츠) 제품의 콘텐츠도 포함')
   const byBrand = await search({ p_brand: brand.id })
   ok(byBrand.total === 1, '브랜드 필터')
+  const byGroupFilter = await search({ p_group: group.id })
+  ok(byGroupFilter.total === 1 && byGroupFilter.rows[0].person?.group?.id === group.id, '그룹 필터 + 목록에 그룹 정보')
+  const byGroupName = await search({ p_q: `아이브${MARK}` })
+  ok(byGroupName.rows.some((x) => x.id === content.id), '그룹 이름으로 멤버의 콘텐츠 검색')
   const byTag = await search({ p_tag: tag.id })
   ok(byTag.total === 1, '태그 필터')
   const byDate = await search({ p_person: person.id, p_date_from: '2026-10-01' })
@@ -234,6 +253,8 @@ async function cleanup() {
   for (const id of created.brands) await admin.from('fa_brands').delete().eq('id', id)
   for (const id of created.people) await admin.from('fa_people').delete().eq('id', id)
   for (const id of created.tags) await admin.from('fa_tags').delete().eq('id', id)
+  for (const id of created.groups) await admin.from('fa_groups').delete().eq('id', id)
+  created.groups = []
   created.files = []
   created.contents = []
   created.items = []

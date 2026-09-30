@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { Img } from '../components/ui/Img'
 import { Empty, ErrorBox, LoadMore, Spinner } from '../components/ui/States'
 import { listBrands } from '../features/brands/api'
 import { listPeople } from '../features/people/api'
+import { listGroups } from '../features/groups/api'
 import { useDebounced } from '../hooks/useDebounced'
 import { usePaged } from '../hooks/usePaged'
 import { nameOrPlaceholder } from '../lib/format'
@@ -12,10 +14,32 @@ import { thumbOf } from '../lib/storage'
 /** 인물 목록 */
 export function PeoplePage() {
   const [q, setQ] = useState('')
+  const [group, setGroup] = useState<string | undefined>(undefined)
   const dq = useDebounced(q, 250)
-  const list = usePaged(['people', dq], (limit, offset) => listPeople(dq, limit, offset), { pageSize: 48 })
+  const groups = useQuery({ queryKey: ['groups', 'all'], queryFn: () => listGroups('', 200) })
+  const list = usePaged(['people', dq, group], (limit, offset) => listPeople(dq, limit, offset, group), { pageSize: 48 })
   return (
-    <Directory title="인물" eyebrow="People" q={q} setQ={setQ} placeholder="이름 (모든 언어) · 메모">
+    <Directory title="인물" eyebrow="People" q={q} setQ={setQ} placeholder="이름 · 그룹 (모든 언어) · 메모">
+      {groups.data && groups.data.rows.length > 0 && (
+        <nav aria-label="그룹" className="-mt-4 mb-8 flex flex-wrap gap-1.5">
+          <button className={`chip ${group === undefined ? 'chip-active' : ''}`} aria-pressed={group === undefined} onClick={() => setGroup(undefined)}>
+            전체
+          </button>
+          {groups.data.rows.map((g) => (
+            <button key={g.id} className={`chip ${group === g.id ? 'chip-active' : ''}`} aria-pressed={group === g.id} onClick={() => setGroup(g.id)}>
+              {g.display_name || '(이름 없음)'}
+            </button>
+          ))}
+          <button className={`chip ${group === 'none' ? 'chip-active' : ''}`} aria-pressed={group === 'none'} onClick={() => setGroup('none')}>
+            그룹 없음
+          </button>
+          {group && group !== 'none' && (
+            <Link to={`/g/${group}`} className="ml-1 self-center text-xs text-muted hover:text-ink">
+              그룹 페이지 →
+            </Link>
+          )}
+        </nav>
+      )}
       {list.isLoading ? (
         <Spinner />
       ) : list.error ? (

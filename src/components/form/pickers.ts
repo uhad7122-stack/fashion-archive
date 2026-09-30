@@ -1,4 +1,5 @@
 import { listBrands } from '../../features/brands/api'
+import { listGroups } from '../../features/groups/api'
 import { searchItems } from '../../features/items/api'
 import { listPeople } from '../../features/people/api'
 import { thumbOf } from '../../lib/storage'
@@ -8,6 +9,11 @@ import type { PickOption } from './EntityPicker'
 export async function searchPeopleOptions(q: string): Promise<PickOption[]> {
   const { rows } = await listPeople(q, 20)
   return rows.map((p) => ({ id: p.id, label: nameOrPlaceholder(p.display_name), image: thumbOf(p.image_path) }))
+}
+
+export async function searchGroupOptions(q: string): Promise<PickOption[]> {
+  const { rows } = await listGroups(q, 20)
+  return rows.map((g) => ({ id: g.id, label: nameOrPlaceholder(g.display_name), image: thumbOf(g.image_path) }))
 }
 
 export async function searchBrandOptions(q: string): Promise<PickOption[]> {

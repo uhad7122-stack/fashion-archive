@@ -12,6 +12,8 @@ import { ItemFormModal } from '../../features/items/ItemFormModal'
 import { deleteItem, getItem, itemUsage, searchItems } from '../../features/items/api'
 import { PersonFormModal } from '../../features/people/PersonFormModal'
 import { deletePerson, listPeople, personUsage } from '../../features/people/api'
+import { GroupFormModal } from '../../features/groups/GroupFormModal'
+import { deleteGroup, groupUsage, listGroups } from '../../features/groups/api'
 import { useDebounced } from '../../hooks/useDebounced'
 import { usePaged } from '../../hooks/usePaged'
 import { formatDate, formatPrice, nameOrPlaceholder } from '../../lib/format'
@@ -339,6 +341,59 @@ export function AdminBrandsPage() {
       />
       <BrandFormModal open={form !== null} id={form?.id} onClose={() => setForm(null)} />
       {del.dialog('브랜드 삭제')}
+    </>
+  )
+}
+
+// ------------------------------------------------------------------ 그룹
+
+export function AdminGroupsPage() {
+  const del = useDelete()
+  const [form, setForm] = useState<{ id?: string } | null>(null)
+  return (
+    <>
+      <AdminList
+        title="그룹"
+        kind="groups"
+        placeholder="그룹 이름 (모든 언어) · 메모"
+        addButton={
+          <button className="btn btn-primary btn-sm" onClick={() => setForm({})}>
+            + 새 그룹
+          </button>
+        }
+        fetch={async (q, limit, offset) => {
+          const r = await listGroups(q, limit, offset)
+          return {
+            total: r.total,
+            rows: r.rows.map((g) => ({
+              id: g.id,
+              title: nameOrPlaceholder(g.display_name),
+              sub: g.memo ?? undefined,
+              image: g.image_path,
+              imageThumb: thumbOf(g.image_path),
+              href: `/g/${g.id}`,
+            })),
+          }
+        }}
+        onEdit={(r) => setForm({ id: r.id })}
+        onDelete={(row) =>
+          del.ask({
+            row,
+            check: async () => {
+              const u = await groupUsage(row.id)
+              return u.members
+                ? {
+                    lines: [`이 그룹에 속한 인물이 ${u.members}명 있어요. 삭제하면 그 인물들은 “그룹 없음”이 돼요. 인물은 삭제되지 않아요.`],
+                    detachLabel: '그룹을 비우고 삭제',
+                  }
+                : { lines: [] }
+            },
+            run: (detach) => deleteGroup({ id: row.id, image_path: row.image ?? null }, detach),
+          })
+        }
+      />
+      <GroupFormModal open={form !== null} id={form?.id} onClose={() => setForm(null)} />
+      {del.dialog('그룹 삭제')}
     </>
   )
 }

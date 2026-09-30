@@ -1,7 +1,7 @@
 import { BUCKET, SUPABASE_KEY, SUPABASE_URL, supabase } from './supabase'
 import { prepareImage } from './image'
 
-export type ImageFolder = 'content' | 'person' | 'brand' | 'item'
+export type ImageFolder = 'content' | 'person' | 'brand' | 'item' | 'group'
 
 export function publicUrl(path: string | null | undefined): string | null {
   if (!path) return null

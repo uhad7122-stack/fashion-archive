@@ -29,7 +29,10 @@ export function ContentGrid({ rows, mode }: { rows: ContentRow[]; mode: ViewMode
               />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-base font-semibold">{nameOrPlaceholder(r.person?.display_name)}</p>
+                <p className="text-base font-semibold">
+                  {nameOrPlaceholder(r.person?.display_name)}
+                  {r.person?.group && <span className="ml-1.5 text-xs font-normal text-muted">{r.person.group.display_name}</span>}
+                </p>
                 <p className="mt-0.5 text-xs text-muted">
                   {[r.content_type?.name, formatDate(r.content_date)].filter(Boolean).join(' · ')}
                 </p>

@@ -209,6 +209,7 @@ export function ItemPage() {
   const rows: { k: string; v: React.ReactNode }[] = [
     { k: '브랜드', v: it.brand ? <Link to={`/b/${it.brand.id}`} className="underline-offset-2 hover:underline">{it.brand.display_name}</Link> : null },
     { k: '카테고리', v: it.category ? <Link to={`/items?category=${it.category.id}`} className="underline-offset-2 hover:underline">{it.category.display_name}</Link> : null },
+    { k: '품번', v: it.product_code ? <span className="font-mono">{it.product_code}</span> : null },
     { k: '가격', v: formatPrice(it.price, it.currency) || null },
     { k: '색상', v: it.color },
     {

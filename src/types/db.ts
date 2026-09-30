@@ -68,6 +68,7 @@ export interface Item {
   info_status_id: UUID | null
   display_name: string
   product_url: string | null
+  product_code: string | null
   price: number | null
   currency: string
   color: string | null

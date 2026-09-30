@@ -186,6 +186,7 @@ function ItemCardBody({ item, rect, crop }: { item: LinkedItem; rect: Rect; crop
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         {item.brand && <p className="eyebrow truncate">{item.brand.display_name}</p>}
         <p className="line-clamp-2 text-sm leading-snug font-semibold">{nameOrPlaceholder(item.display_name)}</p>
+        {item.product_code && <p className="truncate font-mono text-[11px] text-muted">{item.product_code}</p>}
         <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
           {item.price != null && <span className="text-ink">{formatPrice(item.price, item.currency)}</span>}
           {item.info_status && <span>{item.info_status.name}</span>}

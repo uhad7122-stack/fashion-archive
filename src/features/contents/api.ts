@@ -39,6 +39,7 @@ export interface LinkedItem {
   price: number | null
   currency: string
   product_url: string | null
+  product_code: string | null
   image_path: string | null
   color: string | null
   brand: { id: UUID; display_name: string } | null
@@ -55,7 +56,7 @@ export interface ContentDetail extends Content {
   tags: Tag[]
 }
 
-const LINKED_ITEM_COLS = `id, display_name, price, currency, product_url, image_path, color,
+const LINKED_ITEM_COLS = `id, display_name, price, currency, product_url, product_code, image_path, color,
   brand:fa_brands(id, display_name), category:fa_categories(id, display_name),
   info_status:fa_info_statuses(id, name, color)`
 

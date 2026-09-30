@@ -60,6 +60,7 @@ export interface ItemInput {
   category_id: UUID | null
   info_status_id: UUID | null
   product_url: string | null
+  product_code: string | null
   price: number | null
   currency: string
   color: string | null
@@ -74,6 +75,7 @@ export async function saveItem(input: ItemInput): Promise<UUID> {
   const row = {
     ...fields,
     product_url: fields.product_url || null,
+    product_code: fields.product_code?.trim() || null,
     color: fields.color || null,
     memo: fields.memo || null,
     currency: fields.currency || 'KRW',

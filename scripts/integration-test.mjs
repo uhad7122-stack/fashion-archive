@@ -89,8 +89,13 @@ async function main() {
   const tag = must(await admin.from('fa_tags').insert({ name: `${MARK}-공항패션` }).select('id').single())
   created.tags.push(tag.id)
   must(await admin.from('fa_item_tags').insert({ item_id: item.id, tag_id: tag.id }))
-  const upd = await admin.from('fa_items').update({ price: 99000 }).eq('id', item.id)
-  ok(!upd.error, '제품 수정')
+  const upd = await admin.from('fa_items').update({ price: 99000, product_code: `PC-${MARK}` }).eq('id', item.id)
+  ok(!upd.error, '제품 수정 (가격·품번)')
+  const byCode = must(await anon.rpc('fa_search_items', { p_q: `pc-${MARK}` }))
+  ok(byCode.rows.some((x) => x.id === item.id), '품번으로 제품 검색')
+  must(await admin.from('fa_names').insert({ brand_id: brand.id, language_code: 'en', value: `NK${MARK}`, sort_order: 1 }))
+  const alias = must(await anon.from('fa_brands').select('id, display_name').ilike('search_text', `%nk${MARK}%`))
+  ok(alias.some((b) => b.id === brand.id && b.display_name === `Nike${MARK}`), '같은 언어 별칭으로 브랜드 검색 (대표 이름은 그대로)')
 
   console.log('\n[5] Storage 업로드 / 공개 URL')
   // 1x1 PNG

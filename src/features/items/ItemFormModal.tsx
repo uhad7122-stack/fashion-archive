@@ -40,6 +40,7 @@ export function ItemFormModal({ open, id, initialName, onClose, onSaved }: Props
   const [price, setPrice] = useState('')
   const [currency, setCurrency] = useState('KRW')
   const [color, setColor] = useState('')
+  const [code, setCode] = useState('')
   const [url, setUrl] = useState('')
   const [memo, setMemo] = useState('')
   const [image, setImage] = useState<string | null>(null)
@@ -61,6 +62,7 @@ export function ItemFormModal({ open, id, initialName, onClose, onSaved }: Props
       setPrice(d.price == null ? '' : String(d.price))
       setCurrency(d.currency || 'KRW')
       setColor(d.color ?? '')
+      setCode(d.product_code ?? '')
       setUrl(d.product_url ?? '')
       setMemo(d.memo ?? '')
       setImage(d.image_path)
@@ -73,6 +75,7 @@ export function ItemFormModal({ open, id, initialName, onClose, onSaved }: Props
       setPrice('')
       setCurrency('KRW')
       setColor('')
+      setCode('')
       setUrl('')
       setMemo('')
       setImage(null)
@@ -102,6 +105,7 @@ export function ItemFormModal({ open, id, initialName, onClose, onSaved }: Props
         price: priceNum,
         currency,
         color,
+        product_code: code,
         product_url: url,
         memo,
         image_path: image,
@@ -196,6 +200,18 @@ export function ItemFormModal({ open, id, initialName, onClose, onSaved }: Props
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="item-code">
+                품번
+              </label>
+              <input
+                id="item-code"
+                className="input font-mono"
+                placeholder="예: DX1234-001"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
             </div>
             <div>
               <label className="label" htmlFor="item-color">

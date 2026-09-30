@@ -25,18 +25,26 @@ export function NamesEditor({ value, onChange, label = '이름' }: Props) {
 
   const set = (i: number, patch: Partial<NameRow>) => onChange(value.map((r, j) => (j === i ? { ...r, ...patch } : r)))
   const remove = (i: number) => onChange(value.filter((_, j) => j !== i))
-  const move = (i: number, d: -1 | 1) => {
-    const j = i + d
-    if (j < 0 || j >= value.length) return
+  /** 이 줄을 맨 위(대표 이름)로 */
+  const makePrimary = (i: number) => {
+    if (i === 0) return
     const next = value.slice()
-    ;[next[i], next[j]] = [next[j], next[i]]
-    onChange(next)
+    const [row] = next.splice(i, 1)
+    onChange([row, ...next])
   }
-  const add = () => {
+  /** 다른 언어 이름: 아직 안 쓴 언어로 한 줄 */
+  const addOtherLanguage = () => {
     const used = new Set(value.map((r) => r.language_code))
     const lang = languages.find((l) => !used.has(l.code))?.code ?? languages[0]?.code ?? 'ko'
     onChange([...value, { language_code: lang, value: '', sort_order: value.length }])
   }
+  /** 같은 언어 이름(줄임말·별칭): 대표 이름과 같은 언어로 한 줄 */
+  const addSameLanguage = () => {
+    const lang = value[0]?.language_code ?? languages[0]?.code ?? 'ko'
+    onChange([...value, { language_code: lang, value: '', sort_order: value.length }])
+  }
+  // 같은 언어가 두 번 이상 나오면 두 번째부터는 "별칭"으로 표시
+  const isAlias = (i: number) => value.slice(0, i).some((r) => r.language_code === value[i].language_code)
 
   const createLanguage = async () => {
     if (!newLang) return
@@ -59,6 +67,12 @@ export function NamesEditor({ value, onChange, label = '이름' }: Props) {
       <div className="space-y-2">
         {value.map((row, i) => (
           <div key={row.id ?? `new-${i}`} className="flex items-center gap-2">
+            <span
+              className={`w-10 shrink-0 text-center text-[10px] font-medium ${i === 0 ? 'text-ink' : 'text-faint'}`}
+              aria-hidden
+            >
+              {i === 0 ? '대표' : isAlias(i) ? '별칭' : ''}
+            </span>
             <select
               aria-label={`${i + 1}번째 이름의 언어`}
               className="input w-28 shrink-0"
@@ -82,21 +96,22 @@ export function NamesEditor({ value, onChange, label = '이름' }: Props) {
               id={i === 0 ? `${baseId}-first` : undefined}
               className="input"
               value={row.value}
-              placeholder={i === 0 ? '대표 이름' : '다른 언어 이름'}
-              aria-label={`${i + 1}번째 이름`}
+              placeholder={i === 0 ? '대표 이름' : isAlias(i) ? '줄임말 · 별칭' : '다른 언어 이름'}
+              aria-label={`${i + 1}번째 이름${i === 0 ? ' (대표)' : ''}`}
               onChange={(e) => set(i, { value: e.target.value })}
             />
             <div className="flex shrink-0">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => move(i, -1)}
-                disabled={i === 0}
-                aria-label="위로 (대표 이름으로)"
-                title="위로"
-              >
-                ↑
-              </button>
+              {i > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm px-2 text-[11px]"
+                  onClick={() => makePrimary(i)}
+                  aria-label={`“${row.value || '이 이름'}”을 대표 이름으로`}
+                  title="대표 이름으로 지정"
+                >
+                  대표로
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"
@@ -111,11 +126,14 @@ export function NamesEditor({ value, onChange, label = '이름' }: Props) {
           </div>
         ))}
       </div>
-      <div className="mt-2 flex items-center justify-between">
-        <button type="button" className="btn btn-sm" onClick={add}>
-          + 언어 추가
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button type="button" className="btn btn-sm" onClick={addOtherLanguage}>
+          + 다른 언어 이름
         </button>
-        <span className="text-[11px] text-faint">첫 줄이 대표 이름 · 모든 언어로 검색돼요</span>
+        <button type="button" className="btn btn-sm" onClick={addSameLanguage} title="줄임말·별칭처럼 같은 언어로 이름 하나 더">
+          + 같은 언어 이름
+        </button>
+        <span className="ml-auto text-[11px] text-faint">대표 이름이 화면에 보이고, 모든 이름으로 검색돼요</span>
       </div>
 
       {newLang && (

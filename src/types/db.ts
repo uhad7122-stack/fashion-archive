@@ -29,6 +29,13 @@ export interface InfoStatus {
   sort_order: number
 }
 
+export interface Country {
+  id: UUID
+  name: string
+  flag: string | null
+  sort_order: number
+}
+
 export interface Tag {
   id: UUID
   name: string
@@ -56,6 +63,7 @@ export interface Person {
 
 export interface Brand {
   id: UUID
+  country_id: UUID | null
   display_name: string
   logo_path: string | null
   official_url: string | null

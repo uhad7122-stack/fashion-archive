@@ -12,7 +12,7 @@ import {
   updateLookup,
   type LookupKind,
 } from '../../features/lookups/api'
-import { qk, useContentTypes, useInfoStatuses, useLanguages, useTags } from '../../hooks/useLookups'
+import { qk, useContentTypes, useCountries, useInfoStatuses, useLanguages, useTags } from '../../hooks/useLookups'
 import { toMessage } from '../../lib/errors'
 
 interface Row {
@@ -27,6 +27,7 @@ const META: Record<LookupKind, { title: string; help: string; queryKey: readonly
   content_types: { title: '콘텐츠 종류', help: 'Instagram, YouTube, 무대, 공항처럼 콘텐츠를 나누는 종류예요.', queryKey: qk.contentTypes },
   tags: { title: '태그', help: '콘텐츠와 제품에 붙이는 태그예요. (공항패션, 사복, 찾는중 …)', queryKey: qk.tags },
   info_statuses: { title: '정보 상태', help: '제품 정보가 얼마나 확실한지 표시해요. 색은 목록의 점 색이에요.', queryKey: qk.infoStatuses },
+  countries: { title: '나라', help: '브랜드의 나라예요. 국기 칸에는 🇰🇷 같은 이모지를 넣을 수 있어요 (선택).', queryKey: qk.countries },
   languages: { title: '언어', help: '다국어 이름에 쓰는 언어예요. 코드(ko, en…)는 만든 뒤 바꾸면 기존 이름도 같이 바뀌어요.', queryKey: qk.languages },
 }
 
@@ -35,6 +36,7 @@ function useRows(kind: LookupKind): { rows: Row[]; isLoading: boolean; error: un
   const tags = useTags()
   const st = useInfoStatuses()
   const lang = useLanguages()
+  const countries = useCountries()
   switch (kind) {
     case 'content_types':
       return { ...ct, rows: (ct.data ?? []).map((r) => ({ key: r.id, name: r.name })) }
@@ -42,6 +44,8 @@ function useRows(kind: LookupKind): { rows: Row[]; isLoading: boolean; error: un
       return { ...tags, rows: (tags.data ?? []).map((r) => ({ key: r.id, name: r.name })) }
     case 'info_statuses':
       return { ...st, rows: (st.data ?? []).map((r) => ({ key: r.id, name: r.name, color: r.color })) }
+    case 'countries':
+      return { ...countries, rows: (countries.data ?? []).map((r) => ({ key: r.id, name: r.name, color: r.flag })) }
     case 'languages':
       return { ...lang, rows: (lang.data ?? []).map((r) => ({ key: r.code, name: r.label, code: r.code })) }
   }
@@ -53,7 +57,7 @@ export function LookupAdminPage({ kind }: { kind: LookupKind }) {
   const qc = useQueryClient()
   const toast = useToast()
   const { rows, isLoading, error, refetch } = useRows(kind)
-  const [draft, setDraft] = useState<{ name: string; color: string; code: string }>({ name: '', color: '#7a7a7a', code: '' })
+  const [draft, setDraft] = useState<{ name: string; color: string; code: string }>({ name: '', color: kind === 'countries' ? '' : '#7a7a7a', code: '' })
   const [editing, setEditing] = useState<(Row & { draftName: string; draftColor: string; draftCode: string }) | null>(null)
   const [toDelete, setToDelete] = useState<Row | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -67,6 +71,7 @@ export function LookupAdminPage({ kind }: { kind: LookupKind }) {
   const toRow = (name: string, color: string, code: string, sortOrder?: number) => {
     const base: Record<string, unknown> = kind === 'languages' ? { label: name.trim(), code: code.trim().toLowerCase() } : { name: name.trim() }
     if (kind === 'info_statuses') base.color = color
+    if (kind === 'countries') base.flag = color.trim() || null
     if (sortOrder !== undefined) base.sort_order = sortOrder
     return base
   }
@@ -131,6 +136,9 @@ export function LookupAdminPage({ kind }: { kind: LookupKind }) {
         {kind === 'info_statuses' && (
           <input type="color" className="h-10 w-12 rounded-lg border border-line" aria-label="색" value={draft.color} onChange={(e) => setDraft({ ...draft, color: e.target.value })} />
         )}
+        {kind === 'countries' && (
+          <input className="input w-20 text-center" placeholder="국기" aria-label="국기 이모지" value={draft.color} onChange={(e) => setDraft({ ...draft, color: e.target.value })} />
+        )}
         <button className="btn btn-primary">+ 추가</button>
         {formError && <p className="w-full text-xs text-danger">{formError}</p>}
       </form>
@@ -160,6 +168,9 @@ export function LookupAdminPage({ kind }: { kind: LookupKind }) {
                   {kind === 'info_statuses' && (
                     <input type="color" className="h-10 w-12 rounded-lg border border-line" aria-label="색" value={editing.draftColor} onChange={(e) => setEditing({ ...editing, draftColor: e.target.value })} />
                   )}
+                  {kind === 'countries' && (
+                    <input className="input w-20 text-center" aria-label="국기 이모지" value={editing.draftColor} onChange={(e) => setEditing({ ...editing, draftColor: e.target.value })} />
+                  )}
                   <button className="btn btn-primary btn-sm">저장</button>
                   <button type="button" className="btn btn-sm" onClick={() => setEditing(null)}>
                     취소
@@ -168,6 +179,7 @@ export function LookupAdminPage({ kind }: { kind: LookupKind }) {
               ) : (
                 <>
                   {kind === 'info_statuses' && <span className="h-3 w-3 rounded-full" style={{ background: r.color ?? '#999' }} aria-hidden />}
+                  {kind === 'countries' && <span className="w-6 text-center" aria-hidden>{r.color ?? ''}</span>}
                   {r.code && <code className="rounded bg-soft px-1.5 py-0.5 text-xs">{r.code}</code>}
                   <span className="min-w-0 flex-1 truncate text-sm">{kind === 'tags' ? `#${r.name}` : r.name}</span>
                   <button className="btn btn-ghost btn-sm px-2" onClick={() => move(i, -1)} disabled={i === 0} aria-label="위로">
@@ -178,7 +190,7 @@ export function LookupAdminPage({ kind }: { kind: LookupKind }) {
                   </button>
                   <button
                     className="btn btn-ghost btn-sm"
-                    onClick={() => setEditing({ ...r, draftName: r.name, draftColor: r.color ?? '#7a7a7a', draftCode: r.code ?? '' })}
+                    onClick={() => setEditing({ ...r, draftName: r.name, draftColor: r.color ?? (kind === 'countries' ? '' : '#7a7a7a'), draftCode: r.code ?? '' })}
                   >
                     수정
                   </button>

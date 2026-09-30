@@ -8,6 +8,7 @@ const TABS = [
   { to: '/admin/people', label: '인물' },
   { to: '/admin/groups', label: '그룹' },
   { to: '/admin/brands', label: '브랜드' },
+  { to: '/admin/countries', label: '나라' },
   { to: '/admin/categories', label: '카테고리' },
   { to: '/admin/content-types', label: '콘텐츠 종류' },
   { to: '/admin/tags', label: '태그' },

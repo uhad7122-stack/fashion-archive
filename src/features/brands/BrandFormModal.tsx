@@ -6,6 +6,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/States'
 import { useToast } from '../../components/ui/Toast'
 import { useImageDraft } from '../../hooks/useImageDraft'
+import { useCountries } from '../../hooks/useLookups'
 import { toMessage } from '../../lib/errors'
 import type { NameRow, UUID } from '../../types/db'
 import { getBrand, saveBrand } from './api'
@@ -27,6 +28,8 @@ export function BrandFormModal({ open, id, initialName, onClose, onSaved }: Prop
   const [memo, setMemo] = useState('')
   const [url, setUrl] = useState('')
   const [logo, setLogo] = useState<string | null>(null)
+  const [countryId, setCountryId] = useState<string | null>(null)
+  const { data: countries = [] } = useCountries()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const draft = useImageDraft(existing.data?.logo_path ?? null)
@@ -39,11 +42,13 @@ export function BrandFormModal({ open, id, initialName, onClose, onSaved }: Prop
       setMemo(existing.data.memo ?? '')
       setUrl(existing.data.official_url ?? '')
       setLogo(existing.data.logo_path)
+      setCountryId(existing.data.country_id)
     } else if (!id) {
       setNames([{ language_code: 'en', value: initialName ?? '', sort_order: 0 }])
       setMemo('')
       setUrl('')
       setLogo(null)
+      setCountryId(null)
     }
   }, [open, id, existing.data, initialName])
 
@@ -56,7 +61,7 @@ export function BrandFormModal({ open, id, initialName, onClose, onSaved }: Prop
     setSaving(true)
     setError(null)
     try {
-      const savedId = await saveBrand({ id: id ?? undefined, names, memo, official_url: url, logo_path: logo })
+      const savedId = await saveBrand({ id: id ?? undefined, names, memo, official_url: url, logo_path: logo, country_id: countryId })
       await draft.commit()
       await qc.invalidateQueries()
       toast.success('저장 완료')
@@ -91,6 +96,30 @@ export function BrandFormModal({ open, id, initialName, onClose, onSaved }: Prop
       ) : (
         <div className="space-y-5">
           <NamesEditor value={names} onChange={setNames} />
+          <div>
+            <label className="label" htmlFor="brand-country">
+              나라 (선택)
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="brand-country"
+                className="input"
+                value={countryId ?? ''}
+                onChange={(e) => setCountryId(e.target.value || null)}
+              >
+                <option value="">(선택 안 함)</option>
+                {countries.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.flag ? `${c.flag} ` : ''}
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <a href="#/admin/countries" target="_blank" rel="noreferrer" className="btn btn-sm shrink-0" title="나라 목록 관리 (새 탭)">
+                관리
+              </a>
+            </div>
+          </div>
           <ImageField
             label="로고 / 대표 이미지"
             folder="brand"

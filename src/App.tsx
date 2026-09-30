@@ -59,6 +59,7 @@ export default function App() {
           <Route path="tags" element={<LookupAdminPage key="tags" kind="tags" />} />
           <Route path="info-statuses" element={<LookupAdminPage key="st" kind="info_statuses" />} />
           <Route path="languages" element={<LookupAdminPage key="lang" kind="languages" />} />
+          <Route path="countries" element={<LookupAdminPage key="countries" kind="countries" />} />
         </Route>
         <Route path="*" element={<p className="py-20 text-center text-sm text-muted">페이지를 찾을 수 없어요.</p>} />
       </Route>

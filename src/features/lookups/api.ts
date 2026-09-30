@@ -1,15 +1,16 @@
 import { must } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
-import type { ContentType, InfoStatus, Language, Tag } from '../../types/db'
+import type { ContentType, Country, InfoStatus, Language, Tag } from '../../types/db'
 
 /** 이름 하나짜리 관리 목록: 콘텐츠 종류 · 정보 상태 · 태그 · 언어 */
-export type LookupKind = 'content_types' | 'info_statuses' | 'tags' | 'languages'
+export type LookupKind = 'content_types' | 'info_statuses' | 'tags' | 'languages' | 'countries'
 
 export const LOOKUP_TABLE: Record<LookupKind, string> = {
   content_types: 'fa_content_types',
   info_statuses: 'fa_info_statuses',
   tags: 'fa_tags',
   languages: 'fa_languages',
+  countries: 'fa_countries',
 }
 
 export async function listContentTypes(): Promise<ContentType[]> {
@@ -24,6 +25,10 @@ export async function listInfoStatuses(): Promise<InfoStatus[]> {
 
 export async function listTags(): Promise<Tag[]> {
   return (must(await supabase.from('fa_tags').select('id, name, sort_order').order('sort_order').order('name')) ?? []) as Tag[]
+}
+
+export async function listCountries(): Promise<Country[]> {
+  return (must(await supabase.from('fa_countries').select('id, name, flag, sort_order').order('sort_order').order('name')) ?? []) as Country[]
 }
 
 export async function listLanguages(): Promise<Language[]> {
@@ -73,6 +78,9 @@ export async function lookupUsage(kind: LookupKind, key: string): Promise<string
     const a = await count('fa_content_tags', 'tag_id', key)
     const b = await count('fa_item_tags', 'tag_id', key)
     if (a + b) lines.push(`이 태그가 콘텐츠 ${a}개, 제품 ${b}개에 붙어 있어요. 삭제하면 태그 연결만 사라져요.`)
+  } else if (kind === 'countries') {
+    const n = await count('fa_brands', 'country_id', key)
+    if (n) lines.push(`이 나라로 지정된 브랜드가 ${n}개 있어요. 삭제하면 해당 브랜드의 나라가 비워져요.`)
   } else if (kind === 'languages') {
     const n = await count('fa_names', 'language_code', key)
     if (n) lines.push(`이 언어로 등록된 이름이 ${n}개 있어요. 먼저 그 이름들을 지우거나 다른 언어로 바꿔야 삭제할 수 있어요.`)
@@ -86,6 +94,8 @@ export async function detachAndDeleteLookup(kind: LookupKind, key: string) {
     must(await supabase.from('fa_contents').update({ content_type_id: null }).eq('content_type_id', key))
   } else if (kind === 'info_statuses') {
     must(await supabase.from('fa_items').update({ info_status_id: null }).eq('info_status_id', key))
+  } else if (kind === 'countries') {
+    must(await supabase.from('fa_brands').update({ country_id: null }).eq('country_id', key))
   }
   await deleteLookup(kind, key)
 }

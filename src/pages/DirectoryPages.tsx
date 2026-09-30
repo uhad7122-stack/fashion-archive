@@ -7,6 +7,7 @@ import { listBrands } from '../features/brands/api'
 import { listPeople } from '../features/people/api'
 import { listGroups } from '../features/groups/api'
 import { useDebounced } from '../hooks/useDebounced'
+import { useCountries } from '../hooks/useLookups'
 import { usePaged } from '../hooks/usePaged'
 import { nameOrPlaceholder } from '../lib/format'
 import { thumbOf } from '../lib/storage'
@@ -80,10 +81,26 @@ export function PeoplePage() {
 /** 브랜드 목록 */
 export function BrandsPage() {
   const [q, setQ] = useState('')
+  const [country, setCountry] = useState<string | undefined>(undefined)
   const dq = useDebounced(q, 250)
-  const list = usePaged(['brands', dq], (limit, offset) => listBrands(dq, limit, offset), { pageSize: 60 })
+  const { data: countries = [] } = useCountries()
+  const flagOf = new Map(countries.map((c) => [c.id, c]))
+  const list = usePaged(['brands', dq, country], (limit, offset) => listBrands(dq, limit, offset, country), { pageSize: 60 })
   return (
-    <Directory title="브랜드" eyebrow="Brands" q={q} setQ={setQ} placeholder="브랜드 이름 (모든 언어) · 메모">
+    <Directory title="브랜드" eyebrow="Brands" q={q} setQ={setQ} placeholder="브랜드 이름 (모든 언어) · 나라 · 메모">
+      {countries.length > 0 && (
+        <nav aria-label="나라" className="-mt-4 mb-8 flex flex-wrap gap-1.5">
+          <button className={`chip ${country === undefined ? 'chip-active' : ''}`} aria-pressed={country === undefined} onClick={() => setCountry(undefined)}>
+            전체
+          </button>
+          {countries.map((c) => (
+            <button key={c.id} className={`chip ${country === c.id ? 'chip-active' : ''}`} aria-pressed={country === c.id} onClick={() => setCountry(c.id)}>
+              {c.flag ? `${c.flag} ` : ''}
+              {c.name}
+            </button>
+          ))}
+        </nav>
+      )}
       {list.isLoading ? (
         <Spinner />
       ) : list.error ? (
@@ -103,7 +120,14 @@ export function BrandsPage() {
                     fallback={b.display_name}
                     className="h-12 w-12 shrink-0 rounded-lg object-contain"
                   />
-                  <span className="truncate text-sm font-medium">{nameOrPlaceholder(b.display_name)}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{nameOrPlaceholder(b.display_name)}</span>
+                    {b.country_id && flagOf.get(b.country_id) && (
+                      <span className="block truncate text-xs text-muted">
+                        {flagOf.get(b.country_id)!.flag} {flagOf.get(b.country_id)!.name}
+                      </span>
+                    )}
+                  </span>
                 </Link>
               </li>
             ))}

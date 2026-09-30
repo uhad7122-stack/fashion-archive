@@ -18,7 +18,7 @@ const MARK = `itest-${Date.now().toString(36)}`
 const BUCKET = 'fa-archive'
 let passed = 0
 let failed = 0
-const created = { people: [], brands: [], items: [], contents: [], tags: [], files: [], groups: [] }
+const created = { people: [], brands: [], items: [], contents: [], tags: [], files: [], groups: [], countries: [] }
 
 function ok(cond, label, extra = '') {
   if (cond) {
@@ -87,6 +87,13 @@ async function main() {
   const brand = must(await admin.from('fa_brands').insert({ official_url: 'https://example.com' }).select('id').single())
   created.brands.push(brand.id)
   must(await admin.from('fa_names').insert({ brand_id: brand.id, language_code: 'en', value: `Nike${MARK}` }))
+  const country = must(await admin.from('fa_countries').insert({ name: `나라${MARK}`, flag: '🏳️' }).select('id').single())
+  created.countries.push(country.id)
+  must(await admin.from('fa_brands').update({ country_id: country.id }).eq('id', brand.id))
+  const byCountry = must(await anon.from('fa_brands').select('id').ilike('search_text', `%나라${MARK}%`))
+  ok(byCountry.some((b) => b.id === brand.id), '나라 이름으로 브랜드 검색')
+  const delCountry = await admin.from('fa_countries').delete().eq('id', country.id)
+  ok(delCountry.error?.code === '23503', '브랜드가 있는 나라는 바로 삭제되지 않음')
   const cats = must(await anon.from('fa_categories').select('id, parent_id, display_name'))
   const tee = cats.find((c) => c.display_name === '티셔츠')
   const clothing = cats.find((c) => c.display_name === '의류' && !c.parent_id)
@@ -255,6 +262,8 @@ async function cleanup() {
   for (const id of created.tags) await admin.from('fa_tags').delete().eq('id', id)
   for (const id of created.groups) await admin.from('fa_groups').delete().eq('id', id)
   created.groups = []
+  for (const id of created.countries) await admin.from('fa_countries').delete().eq('id', id)
+  created.countries = []
   created.files = []
   created.contents = []
   created.items = []

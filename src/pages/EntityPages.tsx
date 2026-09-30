@@ -146,6 +146,12 @@ export function BrandPage() {
           <p className="eyebrow">Brand</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">{nameOrPlaceholder(b.display_name)}</h1>
           <OtherNames names={b.names} />
+          {b.country && (
+            <p className="mt-2 text-sm text-muted">
+              {b.country.flag ? `${b.country.flag} ` : ''}
+              {b.country.name}
+            </p>
+          )}
           {b.memo && <p className="mt-3 max-w-xl text-sm whitespace-pre-wrap text-muted">{b.memo}</p>}
           <div className="mt-4 flex gap-2">
             {b.official_url && (

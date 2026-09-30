@@ -24,7 +24,7 @@ export function ContentPage() {
   const personName = nameOrPlaceholder(c.person?.display_name)
 
   return (
-    <article className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <article className="grid gap-10 lg:grid-cols-[minmax(0,560px)_minmax(0,380px)] lg:justify-center lg:gap-14">
       <div className="space-y-6">
         {c.youtube_url && embed && (
           <HotspotVideo youtubeUrl={c.youtube_url} spots={c.video_hotspots} items={itemMap} title={c.title || `${personName} 영상`} />
@@ -129,8 +129,11 @@ function Gallery({ content }: { content: ContentDetail }) {
   const go = (d: number) => setIndex((i) => (i + d + images.length) % images.length)
   const alt = `${content.person?.display_name ?? ''} ${content.content_type?.name ?? ''} 사진`
 
+  // 세로로 긴 사진도 한 화면에 들어오게: 폭 = min(칸 폭, 화면 높이 78% × 가로세로비)
+  const ratio = current.width && current.height ? current.width / current.height : 0.8
   return (
     <section
+      style={{ maxWidth: `min(100%, calc(78vh * ${ratio}))` }}
       aria-roledescription="carousel"
       aria-label="사진"
       onKeyDown={(e) => {
